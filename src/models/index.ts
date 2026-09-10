@@ -358,3 +358,158 @@ export interface BackupFile {
 }
 
 export type AccentKey = 'violet' | 'green' | 'pink' | 'amber' | 'blue' | 'red' | 'teal';
+
+/* ------------------------------------------------------------------ */
+/* Mémorisation : définitions et moteur d'exercices                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Une définition est la seule chose que l'utilisateur saisit. Tous les jeux de
+ * mémorisation sont dérivés de son texte par analyse, à la volée.
+ *
+ * Rien d'autre n'est stocké : ni exercices pré-générés, ni découpage, ni mots
+ * importants. C'est ce qui garantit qu'un nouveau type de jeu ajouté plus tard
+ * fonctionne immédiatement sur toutes les définitions déjà enregistrées, sans
+ * migration.
+ */
+export interface Definition {
+  id: Id;
+  title: string;
+  text: string;
+  domainId?: Id;
+  courseId?: Id;
+  lessonId?: Id;
+  tags: string[];
+  /** Carte de révision créée automatiquement, branchée sur le moteur SRS. */
+  flashcardId?: Id;
+  createdAt: IsoDate;
+  updatedAt: IsoDate;
+}
+
+/** Identifiant d'un type de jeu. Volontairement une chaîne : le registre est ouvert. */
+export type MemoGameKind = string;
+
+/**
+ * Les cinq formes d'interaction. Un nouveau jeu réutilise une forme existante
+ * (et n'a donc aucun composant à écrire) ou en ajoute une seule.
+ */
+export type ExerciseShape =
+  | FillBlankShape
+  | ReorderShape
+  | TrueFalseShape
+  | ChoiceShape
+  | FindErrorShape
+  | RecallShape;
+
+export interface FillBlankShape {
+  shape: 'fillBlank';
+  /** Alternance de texte brut et de trous, pour un rendu exact de la phrase. */
+  parts: FillBlankPart[];
+  blanks: FillBlankSlot[];
+}
+
+export type FillBlankPart = { text: string } | { blankId: string };
+
+export interface FillBlankSlot {
+  id: string;
+  answer: string;
+  /** Absent quand l'utilisateur doit écrire la réponse. */
+  options?: string[];
+}
+
+export interface ReorderShape {
+  shape: 'reorder';
+  items: string[];
+  correctOrder: string[];
+  unit: 'word' | 'chunk';
+}
+
+export interface TrueFalseShape {
+  shape: 'trueFalse';
+  statement: string;
+  isTrue: boolean;
+  correctedStatement?: string;
+}
+
+export interface ChoiceShape {
+  shape: 'choice';
+  options: string[];
+  correctIndex: number;
+}
+
+export interface FindErrorShape {
+  shape: 'findError';
+  tokens: string[];
+  wrongIndex: number;
+  correctWord: string;
+}
+
+export interface RecallShape {
+  shape: 'recall';
+  answer: string;
+  /** true = comparaison textuelle automatique, false = auto-évaluation. */
+  autoGrade: boolean;
+}
+
+/** Un exercice généré. Jamais stocké : produit à la demande, puis jeté. */
+export interface MemoExercise {
+  id: string;
+  kind: MemoGameKind;
+  definitionId: Id;
+  level: number;
+  /** Consigne affichée au-dessus de l'exercice. */
+  instruction: string;
+  /** Phrase ou question présentée. */
+  prompt: string;
+  body: ExerciseShape;
+  /** Clés des mots/expressions travaillés, pour le suivi des points faibles. */
+  targetKeys: string[];
+  /** Phrase d'origine complète, réaffichée après la réponse. */
+  sourceSentence: string;
+  /** Limite de temps, uniquement pour les jeux chronométrés. */
+  timeLimitMs?: number;
+}
+
+/** Niveau adaptatif et compteurs, une ligne par définition. */
+export interface DefinitionProgress {
+  definitionId: Id;
+  level: number;
+  streak: number;
+  attempts: number;
+  correct: number;
+  lastPlayedAt?: IsoDate;
+}
+
+/**
+ * Point faible mesuré : une entrée par mot ou expression sur lequel
+ * l'utilisateur a été interrogé. Sert à re-cibler les trous des prochains
+ * exercices.
+ */
+export interface MemoTargetStat {
+  /** `${definitionId}::${normalisation du mot}` */
+  id: Id;
+  definitionId: Id;
+  key: string;
+  attempts: number;
+  errors: number;
+  lastSeenAt: IsoDate;
+}
+
+/* ----------------------- Mot manquant chronométré ---------------------- */
+
+export type TimedMode = 'sprint60' | 'sprint180' | 'fixed10' | 'fixed20' | 'infinite';
+
+export interface TimedRun {
+  id: Id;
+  mode: TimedMode;
+  definitionId?: Id;
+  day: DayKey;
+  score: number;
+  answered: number;
+  correct: number;
+  errors: number;
+  bestStreak: number;
+  averageMs: number;
+  bestMs: number;
+  finishedAt: IsoDate;
+}

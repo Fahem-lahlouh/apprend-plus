@@ -50,6 +50,52 @@ Aucune valeur affichée n'est codée en dur :
 - **Points faibles** = taux de réussite par notion, à partir des vraies tentatives de quiz.
 - **Révisions** = algorithme de répétition espacée dérivé de SM-2.
 
+## Mémorisation : un moteur, pas des exercices écrits à la main
+
+Tu écris une définition (titre + texte), tu enregistres, et elle devient
+immédiatement un parcours de mémorisation. Aucun exercice n'est à configurer.
+
+```
+Définition enregistrée
+        ↓  (à chaque partie, jamais stocké)
+analyzeDefinition(text)   phrases · mots porteurs de sens · expressions
+        ↓
+MemorizationEngine.generateExercise(definition, { kind, level, weakness })
+        ↓
+un exercice, dans l'une des six formes d'interaction
+```
+
+**La règle d'architecture qui compte.** L'analyse n'est *jamais* persistée : elle
+est recalculée depuis `Definition.text`. Un nouveau jeu ajouté dans six mois est
+donc une entrée de plus dans `GAME_REGISTRY` — les cent définitions déjà
+enregistrées le proposent à la seconde suivante, sans migration, sans retoucher
+une seule ligne de contenu.
+
+**Rien n'est écrit pour un domaine.** Le découpage, le repérage des mots
+importants (rareté, casse, longueur) et la construction des distracteurs sont
+purement structurels. Java, Docker, le present perfect ou la grammaire française
+passent par le même code — c'est vérifié par les tests.
+
+Quinze jeux dans le registre : définition à trous progressive, choix de mots,
+trous sans choix, remise en ordre des mots, remise en ordre des morceaux, phrase
+cachée, continuer une phrase, mot déclencheur, question → réponse, vrai/faux,
+trouver l'erreur, choisir la bonne formulation, reconstruction complète, dictée,
+et mot manquant chronométré. Ils tiennent en six formes d'interaction, donc un
+jeu supplémentaire n'a le plus souvent aucun composant à écrire.
+
+**Difficulté et erreurs.** Le niveau va de 1 à 20 : quelques mots masqués au
+début, des groupes vers 10, des morceaux de phrase vers 15, une reconstruction
+quasi complète à 20. Trois bonnes réponses d'affilée font monter, une erreur fait
+redescendre. Les trous sont tirés au sort à chaque session — la position n'est
+donc jamais mémorisable — mais pondérés par le taux d'erreur passé sur chaque
+mot : ce qui bloque revient plus souvent.
+
+**Mot manquant chronométré.** Quatre paliers (10 s avec choix → 3 s sans aide sur
+des expressions entières), cinq modes (sprint 1 min, sprint 3 min, 10 questions,
+20 questions, infini), un mot raté qui revient plus tard dans la même session, et
+un classement personnel : record du jour, meilleur score, meilleure série,
+meilleur temps.
+
 ## Limites assumées
 
 Trois points où le web mobile ne permet pas de tenir une promesse, et où
