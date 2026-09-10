@@ -1,0 +1,128 @@
+.quiz-card {
+  background: var(--ap-surface);
+  border: 1px solid var(--ap-border);
+  border-radius: var(--ap-r-lg);
+  box-shadow: var(--ap-shadow-sm);
+  padding: 18px;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: var(--ap-r-md);
+  background: var(--ap-surface-sunken);
+  border: 1.5px solid transparent;
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 52px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.quiz-option:disabled { cursor: default; }
+.quiz-option--correct { background: var(--ap-green-tint); border-color: var(--ap-success); color: var(--ap-green-ink); }
+.quiz-option--wrong { background: var(--ap-red-tint); border-color: var(--ap-danger); color: var(--ap-red-ink); }
+.quiz-option--muted { opacity: 0.55; }
+
+.quiz-free {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.quiz-feedback {
+  margin-top: 16px;
+  padding: 13px 15px;
+  border-radius: var(--ap-r-md);
+  font-size: 14px;
+}
+
+.quiz-feedback--ok { background: var(--ap-green-tint); color: var(--ap-green-ink); }
+.quiz-feedback--ko { background: var(--ap-amber-tint); color: var(--ap-amber-ink); }
+
+.quiz-feedback__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 750;
+}
+
+.quiz-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.quiz-progress__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ap-text-soft);
+  white-space: nowrap;
+}
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.memory-card {
+  min-height: 92px;
+  border-radius: var(--ap-r-md);
+  padding: 10px;
+  font-size: 12.8px;
+  font-weight: 600;
+  line-height: 1.35;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background: var(--ap-violet-500);
+  color: #fff;
+  border: 1.5px solid transparent;
+  transition: transform 0.15s ease;
+}
+
+.memory-card--open {
+  background: var(--ap-surface);
+  color: var(--ap-text);
+  border-color: var(--ap-violet-400);
+}
+
+.memory-card--done {
+  background: var(--ap-green-tint);
+  color: var(--ap-green-ink);
+  border-color: var(--ap-success);
+}
+
+.game-result {
+  text-align: center;
+  padding: 26px 18px;
+}
+
+.game-result__score {
+  font-size: 44px;
+  font-weight: 850;
+  letter-spacing: -1.5px;
+  color: var(--ap-violet-600);
+}
+
+.defi-timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.defi-timer--low { color: var(--ap-danger); }
