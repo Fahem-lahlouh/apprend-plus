@@ -80,6 +80,13 @@ export function CoursesScreen() {
         </Section>
 
         <div className="ap-list">
+          <Link to="/memorize" className="ap-list-card">
+            <span className="ap-icon-badge ap-icon-badge--sm ap-icon-badge--plain ap-accent-violet">
+              <Icon name="note" size={18} />
+            </span>
+            <span style={{ flex: 1, fontWeight: 650 }}>Mes définitions</span>
+            <Icon name="chevron-right" size={18} style={{ color: 'var(--ap-text-faint)' }} />
+          </Link>
           <Link to="/flashcards" className="ap-list-card">
             <span className="ap-icon-badge ap-icon-badge--sm ap-icon-badge--plain ap-accent-green">
               <Icon name="cards" size={18} />

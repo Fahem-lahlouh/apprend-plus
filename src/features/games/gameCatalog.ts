@@ -46,6 +46,6 @@ export const GAMES: GameEntry[] = [
     description: 'Enchaîne un maximum de bonnes réponses avant la fin du chronomètre.',
     icon: 'bolt',
     accent: 'amber',
-    to: '/games/défi',
+    to: '/games/defi',
   },
 ];

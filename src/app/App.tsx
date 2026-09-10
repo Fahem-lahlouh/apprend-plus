@@ -31,6 +31,11 @@ import { ProfileScreen } from '@/features/profile/ProfileScreen';
 import { FavoritesScreen } from '@/features/profile/FavoritesScreen';
 import { DataScreen } from '@/features/profile/DataScreen';
 import { SearchScreen } from '@/features/search/SearchScreen';
+import { DefinitionsScreen } from '@/features/memorize/DefinitionsScreen';
+import { DefinitionScreen } from '@/features/memorize/DefinitionScreen';
+import { DefinitionEditorScreen } from '@/features/memorize/DefinitionEditorScreen';
+import { MemorizeSessionScreen } from '@/features/memorize/MemorizeSessionScreen';
+import { TimedMissingWordScreen } from '@/features/games/TimedMissingWordScreen';
 
 function Boot({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -87,7 +92,14 @@ export function App() {
                   <Route path="/games" element={<GamesScreen />} />
                   <Route path="/games/quiz" element={<QuizGameScreen />} />
                   <Route path="/games/memory" element={<MemoryGameScreen />} />
-                  <Route path="/games/défi" element={<SpeedChallengeScreen />} />
+                  <Route path="/games/defi" element={<SpeedChallengeScreen />} />
+                  <Route path="/games/timed" element={<TimedMissingWordScreen />} />
+
+                  <Route path="/memorize" element={<DefinitionsScreen />} />
+                  <Route path="/memorize/new" element={<DefinitionEditorScreen />} />
+                  <Route path="/memorize/:definitionId" element={<DefinitionScreen />} />
+                  <Route path="/memorize/:definitionId/edit" element={<DefinitionEditorScreen />} />
+                  <Route path="/memorize/:definitionId/play" element={<MemorizeSessionScreen />} />
 
                   <Route path="/flashcards" element={<FlashcardsScreen />} />
 

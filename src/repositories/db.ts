@@ -1,6 +1,10 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   Bookmark,
+  Definition,
+  DefinitionProgress,
+  MemoTargetStat,
+  TimedRun,
   CardSchedule,
   Chapter,
   Course,
@@ -44,6 +48,10 @@ export const STORE_NAMES = [
   'badges',
   'preferences',
   'profile',
+  'definitions',
+  'definitionProgress',
+  'memoTargetStats',
+  'timedRuns',
 ] as const;
 
 export type StoreName = (typeof STORE_NAMES)[number];
@@ -69,6 +77,10 @@ export class ApprendPlusDb extends Dexie {
   badges!: Table<UnlockedBadge, string>;
   preferences!: Table<Preferences, string>;
   profile!: Table<ProfileState, string>;
+  definitions!: Table<Definition, string>;
+  definitionProgress!: Table<DefinitionProgress, string>;
+  memoTargetStats!: Table<MemoTargetStat, string>;
+  timedRuns!: Table<TimedRun, string>;
 
   constructor(name = 'apprend-plus') {
     super(name);
@@ -93,6 +105,15 @@ export class ApprendPlusDb extends Dexie {
       badges: 'id',
       preferences: 'id',
       profile: 'id',
+    });
+
+    // v2 ajoute la mémorisation. Les tables existantes ne changent pas : les
+    // définitions sont un nouveau type de contenu, pas une migration.
+    this.version(2).stores({
+      definitions: 'id, domainId, courseId, lessonId, updatedAt',
+      definitionProgress: 'definitionId, level, lastPlayedAt',
+      memoTargetStats: 'id, definitionId, key',
+      timedRuns: 'id, mode, day, definitionId, score, finishedAt',
     });
   }
 }
