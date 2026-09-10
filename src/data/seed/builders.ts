@@ -3,11 +3,13 @@ import type {
   CodeLanguage,
   ContentBlock,
   Course,
+  Definition,
   Flashcard,
   Id,
   LearningDomain,
   LearningPath,
   Lesson,
+  LessonDifficulty,
   Level,
   QuizQuestion,
   AccentKey,
@@ -17,6 +19,46 @@ import type {
 
 export const text = (body: string, title?: string): ContentBlock => ({ kind: 'text', text: body, title });
 export const def = (term: string, body: string): ContentBlock => ({ kind: 'definition', term, text: body });
+export const techDef = (term: string, body: string): ContentBlock => ({
+  kind: 'definition',
+  term,
+  text: body,
+  technical: true,
+});
+export const why = (question: string, body: string): ContentBlock => ({ kind: 'why', question, text: body });
+export const codeExplain = (lines: [string, string][], title?: string): ContentBlock => ({
+  kind: 'codeExplain',
+  title,
+  lines: lines.map(([source, explain]) => ({ code: source, explain })),
+});
+export const question = (prompt: string, answer: string): ContentBlock => ({
+  kind: 'question',
+  question: prompt,
+  answer,
+});
+export const compare = (
+  headers: [string, string],
+  rows: [string, string, string][],
+  title?: string,
+): ContentBlock => ({
+  kind: 'compare',
+  title,
+  headers,
+  rows: rows.map(([label, left, right]) => ({ label, left, right })),
+});
+export const badGood = (spec: {
+  language: CodeLanguage;
+  title?: string;
+  bad: string;
+  good: string;
+  why: string;
+}): ContentBlock => ({ kind: 'badGood', ...spec });
+export const steps = (list: string[], title?: string): ContentBlock => ({ kind: 'steps', steps: list, title });
+export const memorize = (definitionId: string, label?: string): ContentBlock => ({
+  kind: 'memorize',
+  definitionId,
+  label,
+});
 export const example = (body: string, title?: string): ContentBlock => ({ kind: 'example', text: body, title });
 export const tip = (body: string): ContentBlock => ({ kind: 'tip', text: body });
 export const warn = (body: string): ContentBlock => ({ kind: 'warning', text: body });
@@ -58,6 +100,23 @@ export interface LessonSpec {
   summary: string;
   minutes: number;
   blocks: ContentBlock[];
+  difficulty?: LessonDifficulty;
+  /** Ids des leçons à comprendre avant celle-ci. */
+  requires?: string[];
+  concepts?: string[];
+  /**
+   * Définitions nées de la leçon. Le builder les matérialise en lignes
+   * `definitions`, donc tous les jeux de mémorisation les acceptent sans qu'une
+   * seule ligne de code Java soit écrite dans le moteur.
+   */
+  definitions?: LessonDefinitionSpec[];
+}
+
+export interface LessonDefinitionSpec {
+  id: string;
+  title: string;
+  text: string;
+  tags?: string[];
 }
 
 export interface ChapterSpec {
@@ -108,6 +167,7 @@ export interface BuiltDomain {
   lessons: Lesson[];
   questions: QuizQuestion[];
   flashcards: Flashcard[];
+  definitions: Definition[];
 }
 
 export function buildDomain(spec: DomainSpec, order: number, now: string): BuiltDomain {
@@ -134,6 +194,7 @@ export function buildDomain(spec: DomainSpec, order: number, now: string): Built
   const courses: Course[] = [];
   const chapters: Chapter[] = [];
   const lessons: Lesson[] = [];
+  const definitions: Definition[] = [];
 
   spec.courses.forEach((courseSpec, courseIndex) => {
     const lessonCount = courseSpec.chapters.reduce((n, c) => n + c.lessons.length, 0);
@@ -157,6 +218,11 @@ export function buildDomain(spec: DomainSpec, order: number, now: string): Built
     });
     void lessonCount;
 
+    // L'ordre des leçons court sur tout le cours, sans repartir de zéro à chaque
+    // chapitre : c'est lui qui donne « leçon 9 sur 12 » et qui désigne la leçon
+    // suivante. Un ordre relatif au chapitre ferait se croiser les numéros.
+    let lessonOrder = 0;
+
     courseSpec.chapters.forEach((chapterSpec, chapterIndex) => {
       chapters.push({
         id: chapterSpec.id,
@@ -165,7 +231,8 @@ export function buildDomain(spec: DomainSpec, order: number, now: string): Built
         description: chapterSpec.description,
         order: chapterIndex,
       });
-      chapterSpec.lessons.forEach((lessonSpec, lessonIndex) => {
+      chapterSpec.lessons.forEach((lessonSpec) => {
+        const lessonDefinitions = lessonSpec.definitions ?? [];
         lessons.push({
           id: lessonSpec.id,
           chapterId: chapterSpec.id,
@@ -174,9 +241,27 @@ export function buildDomain(spec: DomainSpec, order: number, now: string): Built
           title: lessonSpec.title,
           summary: lessonSpec.summary,
           estimatedMinutes: lessonSpec.minutes,
-          order: lessonIndex,
+          order: lessonOrder,
           blocks: lessonSpec.blocks,
+          difficulty: lessonSpec.difficulty,
+          prerequisites: lessonSpec.requires,
+          concepts: lessonSpec.concepts,
+          definitionIds: lessonDefinitions.map((d) => d.id),
         });
+        for (const entry of lessonDefinitions) {
+          definitions.push({
+            id: entry.id,
+            title: entry.title,
+            text: entry.text,
+            domainId: spec.id,
+            courseId: courseSpec.id,
+            lessonId: lessonSpec.id,
+            tags: entry.tags ?? [],
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+        lessonOrder += 1;
       });
     });
   });
@@ -193,7 +278,7 @@ export function buildDomain(spec: DomainSpec, order: number, now: string): Built
     createdAt: now,
   }));
 
-  return { domain, paths, courses, chapters, lessons, questions: spec.questions, flashcards };
+  return { domain, paths, courses, chapters, lessons, questions: spec.questions, flashcards, definitions };
 }
 
 /** Question factory keeping the seed files short and consistent. */
@@ -279,5 +364,35 @@ export function fillBlank(spec: {
     acceptedAnswers: spec.accepted,
     explanation: spec.explanation,
     tags: spec.tags ?? [],
+  };
+}
+
+/**
+ * Question ouverte : l'utilisateur formule sa réponse, puis compare avec le
+ * modèle. Utilisée par le mode entretien, qui sélectionne sur le tag `entretien`
+ * et reste donc valable pour n'importe quel domaine.
+ */
+export function openQuestion(spec: {
+  id: string;
+  domainId: string;
+  courseId?: string;
+  lessonId?: string;
+  topic: string;
+  prompt: string;
+  answer: string;
+  explanation?: string;
+  tags?: string[];
+}): QuizQuestion {
+  return {
+    id: spec.id,
+    domainId: spec.domainId,
+    courseId: spec.courseId,
+    lessonId: spec.lessonId,
+    topic: spec.topic,
+    type: 'free_text',
+    prompt: spec.prompt,
+    answer: spec.answer,
+    explanation: spec.explanation ?? spec.answer,
+    tags: ['entretien', ...(spec.tags ?? [])],
   };
 }

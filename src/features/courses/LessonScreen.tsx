@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Button, EmptyState, Icon, ProgressBar, Sheet, useToast } from '@/design-system';
 import { TopBar } from '@/app/TopBar';
@@ -14,6 +14,8 @@ import {
   toggleFavorite,
 } from '@/services/learningService';
 import { nextLesson } from '@/services/progression';
+import { DIFFICULTY_LABEL, prerequisiteStatuses } from '@/services/curriculum';
+import { loadMasteryMap, masteryStates } from '@/services/masteryService';
 import { useStudyTimer } from '@/hooks/useStudyTimer';
 import { newId } from '@/utils/id';
 import { LessonBlockView } from './LessonBlocks';
@@ -37,6 +39,18 @@ export function LessonScreen() {
       personalRepository.notesForLesson(lesson.id),
       db.favorites.get(favoriteId('lesson', lesson.id)),
     ]);
+    // Un prérequis peut vivre dans un autre cours du même domaine : le graphe
+    // se lit donc à l'échelle du domaine, pas du cours courant.
+    const domainLessons = await db.lessons.where('domainId').equals(lesson.domainId).toArray();
+    const mastery = await loadMasteryMap(domainLessons);
+    const lessonsById = new Map(domainLessons.map((l) => [l.id, l]));
+    const states = masteryStates(mastery);
+
+    // Le titre d'une leçon est souvent un fragment (« for, while, do while ») :
+    // hors de son chapitre, il ne dit plus de quelle notion il s'agit.
+    const chapters = await db.chapters.bulkGet([...new Set(domainLessons.map((l) => l.chapterId))]);
+    const chapterTitles = new Map(chapters.filter(Boolean).map((c) => [c!.id, c!.title]));
+
     const index = siblings.findIndex((l) => l.id === lesson.id);
     return {
       lesson,
@@ -46,6 +60,11 @@ export function LessonScreen() {
       isCompleted: progress?.status === 'completed',
       position: { index: index + 1, total: siblings.length },
       next: siblings[index + 1] ?? nextLesson(siblings, allProgress),
+      mastery: mastery.get(lesson.id),
+      prerequisites: prerequisiteStatuses(lesson, lessonsById, states).map((prereq) => ({
+        ...prereq,
+        chapter: chapterTitles.get(lessonsById.get(prereq.lessonId)?.chapterId ?? ''),
+      })),
     };
   }, [lessonId]);
 
@@ -153,13 +172,38 @@ export function LessonScreen() {
           <span className="ap-chip">
             <Icon name="clock" size={14} /> {lesson.estimatedMinutes} min
           </span>
-          {data.isCompleted && (
-            <span className="ap-chip" style={{ background: 'var(--ap-green-tint)', color: 'var(--ap-green-ink)' }}>
-              <Icon name="check" size={14} /> Terminée
-            </span>
+          {lesson.difficulty && <span className="ap-chip">{DIFFICULTY_LABEL[lesson.difficulty]}</span>}
+          {data.mastery && (
+            <span className={`mastery-chip mastery-chip--${data.mastery.state}`}>{data.mastery.label}</span>
           )}
         </div>
       </div>
+
+      {data.prerequisites.length > 0 && (
+        <section className="prereq-card">
+          <p className="block-callout__label" style={{ color: 'var(--ap-violet-ink)' }}>
+            <Icon name="bookmark" size={14} /> Pour comprendre cette leçon
+          </p>
+          <ul className="prereq-list">
+            {data.prerequisites.map((prereq) => (
+              <li key={prereq.lessonId}>
+                <Link className="prereq-link" to={`/courses/lesson/${prereq.lessonId}`}>
+                  <Icon
+                    name={prereq.satisfied ? 'check-circle' : 'bolt'}
+                    size={16}
+                    style={{ color: prereq.satisfied ? 'var(--ap-green-ink)' : 'var(--ap-amber-ink)' }}
+                  />
+                  <span className="prereq-link__label">
+                    {prereq.chapter && <span className="prereq-link__chapter">{prereq.chapter}</span>}
+                    {prereq.title}
+                  </span>
+                  <span className="prereq-link__state">{prereq.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <article>
         {lesson.blocks.map((block, index) => (

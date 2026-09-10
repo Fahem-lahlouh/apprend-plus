@@ -24,15 +24,116 @@ export function LessonBlockView({ block }: { block: ContentBlock }) {
     case 'definition':
       return (
         <div className="lesson-block">
-          <div className="block-callout block-définition">
+          <div className={`block-callout ${block.technical ? 'block-tech-def' : 'block-definition'}`}>
             <p className="block-callout__label">
-              <Icon name="sparkle" size={14} /> Définition
+              <Icon name={block.technical ? 'code' : 'sparkle'} size={14} />{' '}
+              {block.technical ? 'Définition technique' : 'Définition simple'}
             </p>
             <p style={{ fontWeight: 750, marginBottom: 4 }}>{block.term}</p>
             <p>{block.text}</p>
           </div>
         </div>
       );
+
+    case 'why':
+      return (
+        <div className="lesson-block">
+          <div className="block-callout block-why">
+            <p className="block-callout__label">
+              <Icon name="target" size={14} /> Pourquoi on fait ça ?
+            </p>
+            <p style={{ fontWeight: 750, marginBottom: 4 }}>{block.question}</p>
+            <p>{block.text}</p>
+          </div>
+        </div>
+      );
+
+    case 'codeExplain':
+      return (
+        <div className="lesson-block">
+          <p className="lesson-block__title">{block.title ?? 'Le code, ligne par ligne'}</p>
+          <ol className="explain-list">
+            {block.lines.map((line, index) => (
+              <li key={`${line.code}-${index}`} className="explain-list__item">
+                <code className="explain-list__code">{line.code}</code>
+                <p className="explain-list__text">{line.explain}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      );
+
+    case 'question':
+      return <QuestionBlockView question={block.question} answer={block.answer} />;
+
+    case 'compare':
+      return (
+        <div className="lesson-block">
+          {block.title && <p className="lesson-block__title">{block.title}</p>}
+          <div className="compare-scroll">
+            <table className="compare-table">
+              <thead>
+                <tr>
+                  <th scope="col" />
+                  <th scope="col">{block.headers[0]}</th>
+                  <th scope="col">{block.headers[1]}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {block.rows.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row">{row.label}</th>
+                    <td>{row.left}</td>
+                    <td>{row.right}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+
+    case 'badGood':
+      return (
+        <div className="lesson-block">
+          {block.title && <p className="lesson-block__title">{block.title}</p>}
+          <div className="badgood">
+            <div className="badgood__side badgood__side--bad">
+              <p className="block-callout__label">
+                <Icon name="x" size={14} /> À éviter
+              </p>
+              <pre className="ap-code">{block.bad}</pre>
+            </div>
+            <div className="badgood__side badgood__side--good">
+              <p className="block-callout__label">
+                <Icon name="check" size={14} /> Mieux
+              </p>
+              <pre className="ap-code">{block.good}</pre>
+            </div>
+          </div>
+          <div className="block-callout block-tip" style={{ marginTop: 10 }}>
+            {block.why}
+          </div>
+        </div>
+      );
+
+    case 'steps':
+      return (
+        <div className="lesson-block">
+          <p className="lesson-block__title">{block.title ?? 'La méthode, dans l’ordre'}</p>
+          <ol className="steps-list">
+            {block.steps.map((step, index) => (
+              <li key={step}>
+                <span className="steps-list__index">{index + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      );
+
+    case 'memorize':
+      return <MemorizeBlockView definitionId={block.definitionId} label={block.label} />;
 
     case 'example':
       return (
@@ -243,6 +344,61 @@ function PronunciationBlockView({ block }: { block: Extract<ContentBlock, { kind
           La synthese vocale n’est pas disponible dans ce navigateur.
         </p>
       )}
+    </div>
+  );
+}
+
+function QuestionBlockView({ question, answer }: { question: string; answer: string }) {
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div className="lesson-block">
+      <div className="block-callout block-question">
+        <p className="block-callout__label">
+          <Icon name="chat" size={14} /> Question de compréhension
+        </p>
+        <p style={{ fontWeight: 750, marginBottom: 10 }}>{question}</p>
+        {revealed ? (
+          <p className="question-answer">{answer}</p>
+        ) : (
+          <Button size="sm" variant="secondary" onClick={() => setRevealed(true)}>
+            Voir la réponse
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Passerelle vers le moteur de mémorisation. Aucun exercice n'est préparé ici :
+ * l'écran de jeu les dérive du texte de la définition au moment de jouer.
+ */
+function MemorizeBlockView({ definitionId, label }: { definitionId: string; label?: string }) {
+  const navigate = useNavigate();
+  const definition = useLiveQuery(() => db.definitions.get(definitionId), [definitionId]);
+  if (!definition) return null;
+
+  return (
+    <div className="lesson-block">
+      <div className="memorize-cta">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p className="block-callout__label" style={{ color: 'var(--ap-violet-ink)' }}>
+            <Icon name="brain" size={14} /> Mémoriser
+          </p>
+          <p style={{ fontWeight: 750, fontSize: 15 }}>{label ?? definition.title}</p>
+          <p className="ap-caption" style={{ marginTop: 2 }}>
+            Trous, remise en ordre, vrai/faux, récitation… tous les jeux sont générés depuis ce texte.
+          </p>
+        </div>
+        <div className="memorize-cta__actions">
+          <Button size="sm" icon="play" onClick={() => navigate(`/memorize/${definition.id}/play`)}>
+            Jouer
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => navigate(`/memorize/${definition.id}`)}>
+            Détail
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
