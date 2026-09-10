@@ -1,0 +1,79 @@
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--ap-surface);
+  border: 1px solid var(--ap-border);
+  border-radius: var(--ap-r-lg);
+  padding: 14px;
+  box-shadow: var(--ap-shadow-xs);
+}
+
+.stat-card__value {
+  font-size: 24px;
+  font-weight: 820;
+  letter-spacing: -0.8px;
+  margin-top: 6px;
+}
+
+.spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 84px;
+  margin-top: 10px;
+}
+
+.spark__bar {
+  flex: 1;
+  border-radius: 5px 5px 3px 3px;
+  background: var(--ap-violet-200);
+  min-height: 4px;
+}
+
+.spark__bar--met { background: var(--ap-violet-500); }
+
+.spark__labels {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.spark__labels span {
+  flex: 1;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--ap-text-faint);
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cal-cell {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 650;
+  background: var(--ap-surface-sunken);
+  color: var(--ap-text-faint);
+}
+
+.cal-cell--studied { background: var(--ap-violet-100); color: var(--ap-violet-600); }
+.cal-cell--met { background: var(--ap-violet-500); color: #fff; }
+.cal-cell--today { outline: 2px solid var(--ap-violet-500); outline-offset: 1px; }
+.cal-cell--empty { background: transparent; }
+
+.weak-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}

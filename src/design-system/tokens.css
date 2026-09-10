@@ -1,0 +1,138 @@
+/* ------------------------------------------------------------------ */
+/* Apprend+ design tokens                                             */
+/* Light is the reference theme; dark is a hand-tuned palette, not an  */
+/* automatic inversion.                                               */
+/* ------------------------------------------------------------------ */
+
+:root {
+  color-scheme: light;
+
+  /* Brand */
+  --ap-violet-50: #f1efff;
+  --ap-violet-100: #e6e2ff;
+  --ap-violet-200: #cdc6ff;
+  --ap-violet-400: #8b7dfa;
+  --ap-violet-500: #6c5ce7;
+  --ap-violet-600: #5b4ddb;
+  --ap-violet-700: #4a3dbd;
+
+  /* Surfaces */
+  --ap-bg: #f4f6fc;
+  --ap-surface: #ffffff;
+  --ap-surface-2: #fbfbff;
+  --ap-surface-sunken: #f0f2fa;
+  --ap-border: #e8eaf4;
+  --ap-border-strong: #d6dae9;
+
+  /* Text */
+  --ap-text: #16182b;
+  --ap-text-soft: #5c6180;
+  --ap-text-faint: #8b90ab;
+  --ap-on-accent: #ffffff;
+
+  /* Accents (tint = card background, ink = icon/text, bar = progress) */
+  --ap-violet-tint: #eeeafe;
+  --ap-violet-ink: #5b4ddb;
+  --ap-green-tint: #e2f6ea;
+  --ap-green-ink: #17976a;
+  --ap-pink-tint: #fde8ef;
+  --ap-pink-ink: #d94a7a;
+  --ap-amber-tint: #fdf0d6;
+  --ap-amber-ink: #c98314;
+  --ap-blue-tint: #e4eeff;
+  --ap-blue-ink: #2f6bd8;
+  --ap-red-tint: #fde9e7;
+  --ap-red-ink: #d94a3d;
+  --ap-teal-tint: #ddf3f4;
+  --ap-teal-ink: #128a92;
+
+  --ap-success: #17976a;
+  --ap-danger: #d64545;
+  --ap-warning: #c98314;
+  --ap-streak: #f0503a;
+
+  /* Radii */
+  --ap-r-sm: 12px;
+  --ap-r-md: 16px;
+  --ap-r-lg: 20px;
+  --ap-r-xl: 26px;
+  --ap-r-pill: 999px;
+
+  /* Shadows - extremely light, as in the reference design */
+  --ap-shadow-xs: 0 1px 2px rgba(24, 27, 58, 0.04);
+  --ap-shadow-sm: 0 2px 10px rgba(24, 27, 58, 0.05);
+  --ap-shadow-md: 0 8px 24px rgba(24, 27, 58, 0.07);
+  --ap-shadow-lg: 0 16px 40px rgba(24, 27, 58, 0.10);
+
+  /* Spacing */
+  --ap-s-1: 4px;
+  --ap-s-2: 8px;
+  --ap-s-3: 12px;
+  --ap-s-4: 16px;
+  --ap-s-5: 20px;
+  --ap-s-6: 24px;
+  --ap-s-7: 32px;
+  --ap-s-8: 40px;
+
+  /* Type */
+  --ap-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --ap-font-mono: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --ap-nav-height: 62px;
+  --ap-max-width: 520px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ap-bg: #0e1020;
+  --ap-surface: #191c31;
+  --ap-surface-2: #1f2338;
+  --ap-surface-sunken: #14162a;
+  --ap-border: #262b45;
+  --ap-border-strong: #333856;
+
+  --ap-text: #f1f2f8;
+  --ap-text-soft: #a9aecb;
+  --ap-text-faint: #7f85a5;
+
+  --ap-violet-500: #8b7dfa;
+  --ap-violet-600: #7a6bf5;
+  --ap-violet-50: #221f3d;
+  --ap-violet-100: #2a2650;
+
+  --ap-violet-tint: #262246;
+  --ap-violet-ink: #a99bff;
+  --ap-green-tint: #16302a;
+  --ap-green-ink: #59d6a5;
+  --ap-pink-tint: #341f2b;
+  --ap-pink-ink: #f487ae;
+  --ap-amber-tint: #33291a;
+  --ap-amber-ink: #f0b95c;
+  --ap-blue-tint: #1b2743;
+  --ap-blue-ink: #7fabf5;
+  --ap-red-tint: #351f1e;
+  --ap-red-ink: #f08a80;
+  --ap-teal-tint: #172f33;
+  --ap-teal-ink: #57cdd5;
+
+  --ap-success: #59d6a5;
+  --ap-danger: #f08a80;
+  --ap-warning: #f0b95c;
+  --ap-streak: #ff7a63;
+
+  --ap-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --ap-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --ap-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --ap-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Accent helper classes: one class sets tint + ink for a whole card. */
+.ap-accent-violet { --accent-tint: var(--ap-violet-tint); --accent-ink: var(--ap-violet-ink); }
+.ap-accent-green  { --accent-tint: var(--ap-green-tint);  --accent-ink: var(--ap-green-ink); }
+.ap-accent-pink   { --accent-tint: var(--ap-pink-tint);   --accent-ink: var(--ap-pink-ink); }
+.ap-accent-amber  { --accent-tint: var(--ap-amber-tint);  --accent-ink: var(--ap-amber-ink); }
+.ap-accent-blue   { --accent-tint: var(--ap-blue-tint);   --accent-ink: var(--ap-blue-ink); }
+.ap-accent-red    { --accent-tint: var(--ap-red-tint);    --accent-ink: var(--ap-red-ink); }
+.ap-accent-teal   { --accent-tint: var(--ap-teal-tint);   --accent-ink: var(--ap-teal-ink); }
