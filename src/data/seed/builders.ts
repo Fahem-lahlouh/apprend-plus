@@ -5,6 +5,7 @@ import type {
   Course,
   Definition,
   Flashcard,
+  FlowStep,
   Id,
   LearningDomain,
   LearningPath,
@@ -58,6 +59,42 @@ export const memorize = (definitionId: string, label?: string): ContentBlock => 
   kind: 'memorize',
   definitionId,
   label,
+});
+export const interview = (spec: {
+  question: string;
+  short: string;
+  detailed: string;
+  followUps?: [string, string][];
+}): ContentBlock => ({
+  kind: 'interview',
+  question: spec.question,
+  shortAnswer: spec.short,
+  detailedAnswer: spec.detailed,
+  followUps: spec.followUps?.map(([q, a]) => ({ question: q, answer: a })),
+});
+export const flow = (steps: FlowStep[], title?: string): ContentBlock => ({ kind: 'flow', title, steps });
+export const step = (
+  label: string,
+  role: string,
+  what: string,
+  without: string,
+  alternatives?: string,
+): FlowStep => ({ label, role, what, without, alternatives });
+export const incident = (spec: {
+  symptom: string;
+  where: string[];
+  collect: string[];
+  hypotheses: [string, string][];
+  fix: string;
+  validate: string;
+}): ContentBlock => ({
+  kind: 'incident',
+  symptom: spec.symptom,
+  where: spec.where,
+  collect: spec.collect,
+  hypotheses: spec.hypotheses.map(([cause, confirm]) => ({ cause, confirm })),
+  fix: spec.fix,
+  validate: spec.validate,
 });
 export const example = (body: string, title?: string): ContentBlock => ({ kind: 'example', text: body, title });
 export const tip = (body: string): ContentBlock => ({ kind: 'tip', text: body });
@@ -380,6 +417,10 @@ export function openQuestion(spec: {
   topic: string;
   prompt: string;
   answer: string;
+  /** Version tenable en trente secondes, dite avant de développer. */
+  short?: string;
+  /** Relances posées une fois la réponse donnée, sous forme [question, réponse]. */
+  followUps?: [string, string][];
   explanation?: string;
   tags?: string[];
 }): QuizQuestion {
@@ -392,6 +433,8 @@ export function openQuestion(spec: {
     type: 'free_text',
     prompt: spec.prompt,
     answer: spec.answer,
+    shortAnswer: spec.short,
+    followUps: spec.followUps?.map(([question, answer]) => ({ question, answer })),
     explanation: spec.explanation ?? spec.answer,
     tags: ['entretien', ...(spec.tags ?? [])],
   };

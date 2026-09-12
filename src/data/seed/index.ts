@@ -2,6 +2,7 @@ import { db } from '@/repositories/db';
 import { settingsRepository } from '@/repositories/settingsRepository';
 import { buildDomain, type BuiltDomain } from './builders';
 import { javaDomain } from './java';
+import { stackDomain } from './stack';
 import { dataDomain } from './data';
 import { anglaisDomain } from './anglais';
 import { grammaireDomain } from './grammaire';
@@ -9,7 +10,7 @@ import type { DayStat, LearningSession, LessonProgress, Reminder } from '@/model
 import { toDayKey } from '@/utils/date';
 import { newId } from '@/utils/id';
 
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 /** Lessons pre-marked as done so the app opens on a realistic state. */
 const DEMO_COMPLETED_LESSONS = [
@@ -33,7 +34,7 @@ const DEMO_COMPLETED_LESSONS = [
 ];
 
 function buildAll(now: string): BuiltDomain[] {
-  return [javaDomain, dataDomain, anglaisDomain, grammaireDomain].map((spec, index) =>
+  return [javaDomain, stackDomain, dataDomain, anglaisDomain, grammaireDomain].map((spec, index) =>
     buildDomain(spec, index, now),
   );
 }

@@ -3,11 +3,26 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Button, EmptyState, Icon, ProgressBar, useToast } from '@/design-system';
 import { TopBar } from '@/app/TopBar';
 import { db } from '@/repositories/db';
-import type { QuizQuestion } from '@/models';
+import type { FollowUp, QuizQuestion } from '@/models';
 import { shuffle } from '@/utils/array';
 import { recordAttempt } from '@/services/learningService';
 import { useStudyTimer } from '@/hooks/useStudyTimer';
+import '@/features/courses/courses.css';
 import './games.css';
+
+/** Une relance, repliée par défaut pour qu'on puisse s'interroger dessus. */
+function FollowUpRow({ followUp }: { followUp: FollowUp }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <button type="button" className="followup" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+      <span className="followup__head">
+        <span className="followup__question">{followUp.question}</span>
+        <Icon name={open ? 'chevron-down' : 'chevron-right'} size={16} style={{ color: 'var(--ap-text-faint)' }} />
+      </span>
+      {open && <span className="followup__answer">{followUp.answer}</span>}
+    </button>
+  );
+}
 
 /** Le tag qui rend une question éligible au mode entretien, quel que soit son domaine. */
 export const INTERVIEW_TAG = 'entretien';
@@ -131,12 +146,34 @@ export function InterviewScreen() {
         />
 
         {revealed ? (
-          <div className="block-callout block-keypoints" style={{ marginTop: 14 }}>
-            <p className="block-callout__label">
-              <Icon name="sparkle" size={14} /> Réponse attendue
-            </p>
-            <p>{question.answer}</p>
-          </div>
+          <>
+            {question.shortAnswer && (
+              <div className="interview-answer" style={{ marginTop: 14 }}>
+                <p className="interview-answer__tag">Réponse courte · 20 à 30 secondes</p>
+                <p>{question.shortAnswer}</p>
+              </div>
+            )}
+            <div className="block-callout block-keypoints" style={{ marginTop: 12 }}>
+              <p className="block-callout__label">
+                <Icon name="sparkle" size={14} />{' '}
+                {question.shortAnswer ? 'Réponse détaillée · 1 à 2 minutes' : 'Réponse attendue'}
+              </p>
+              <p>{question.answer}</p>
+            </div>
+
+            {question.followUps && question.followUps.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <p className="interview-answer__tag" style={{ marginBottom: 8 }}>
+                  Les relances qui suivent
+                </p>
+                <div className="ap-list">
+                  {question.followUps.map((followUp) => (
+                    <FollowUpRow key={followUp.question} followUp={followUp} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <Button block variant="secondary" style={{ marginTop: 14 }} onClick={() => setRevealed(true)}>
             Voir la réponse attendue

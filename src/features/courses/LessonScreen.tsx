@@ -39,16 +39,18 @@ export function LessonScreen() {
       personalRepository.notesForLesson(lesson.id),
       db.favorites.get(favoriteId('lesson', lesson.id)),
     ]);
-    // Un prérequis peut vivre dans un autre cours du même domaine : le graphe
-    // se lit donc à l'échelle du domaine, pas du cours courant.
-    const domainLessons = await db.lessons.where('domainId').equals(lesson.domainId).toArray();
-    const mastery = await loadMasteryMap(domainLessons);
-    const lessonsById = new Map(domainLessons.map((l) => [l.id, l]));
+    // Un prérequis peut vivre dans un autre cours, et même dans un autre
+    // domaine : le parcours technique s'appuie sur les leçons du langage. Le
+    // graphe se lit donc sur toutes les leçons, sans quoi un prérequis
+    // inter-domaines serait silencieusement ignoré.
+    const allLessons = await db.lessons.toArray();
+    const mastery = await loadMasteryMap(allLessons);
+    const lessonsById = new Map(allLessons.map((l) => [l.id, l]));
     const states = masteryStates(mastery);
 
     // Le titre d'une leçon est souvent un fragment (« for, while, do while ») :
     // hors de son chapitre, il ne dit plus de quelle notion il s'agit.
-    const chapters = await db.chapters.bulkGet([...new Set(domainLessons.map((l) => l.chapterId))]);
+    const chapters = await db.chapters.bulkGet([...new Set(allLessons.map((l) => l.chapterId))]);
     const chapterTitles = new Map(chapters.filter(Boolean).map((c) => [c!.id, c!.title]));
 
     const index = siblings.findIndex((l) => l.id === lesson.id);

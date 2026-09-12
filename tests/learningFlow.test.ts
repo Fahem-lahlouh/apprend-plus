@@ -31,8 +31,8 @@ describe('learning flow against IndexedDB', () => {
     await seedDatabase();
   });
 
-  it('seeds the four built-in domains with real content', async () => {
-    expect(await db.domains.count()).toBe(4);
+  it('seeds the five built-in domains with real content', async () => {
+    expect(await db.domains.count()).toBe(5);
     expect(await db.lessons.count()).toBeGreaterThan(30);
     expect(await db.questions.count()).toBeGreaterThan(20);
     expect(await db.flashcards.count()).toBeGreaterThan(20);

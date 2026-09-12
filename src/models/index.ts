@@ -122,7 +122,10 @@ export type ContentBlock =
   | CompareBlock
   | BadGoodBlock
   | StepsBlock
-  | MemorizeBlock;
+  | MemorizeBlock
+  | InterviewBlock
+  | FlowBlock
+  | IncidentBlock;
 
 export interface TextBlock {
   kind: 'text';
@@ -188,6 +191,73 @@ export interface MemorizeBlock {
   kind: 'memorize';
   definitionId: Id;
   label?: string;
+}
+
+/**
+ * « Comment l'expliquer en entretien ? »
+ *
+ * Deux niveaux plutôt qu'un seul : réciter une définition ne suffit pas en
+ * entretien, il faut d'abord placer une réponse tenable en trente secondes,
+ * puis savoir la dérouler. Les relances sont les questions qui tombent
+ * réellement juste après, une fois la première réponse donnée.
+ */
+export interface InterviewBlock {
+  kind: 'interview';
+  question: string;
+  /** Réponse tenable à l'oral en 20 à 30 secondes. */
+  shortAnswer: string;
+  /** Développement d'une à deux minutes. */
+  detailedAnswer: string;
+  followUps?: FollowUp[];
+}
+
+export interface FollowUp {
+  question: string;
+  answer: string;
+}
+
+/**
+ * Chaîne de composants (« Client → API → Service → Base »).
+ *
+ * Chaque maillon porte les questions qu'on doit pouvoir répondre sur lui, pour
+ * que la chaîne s'apprenne comme un raisonnement et non comme un schéma.
+ */
+export interface FlowBlock {
+  kind: 'flow';
+  title?: string;
+  steps: FlowStep[];
+}
+
+export interface FlowStep {
+  label: string;
+  /** Rôle en une ligne, visible sans déplier. */
+  role: string;
+  /** Ce que le composant fait réellement. */
+  what: string;
+  /** Ce qui casse ou se dégrade si on l'enlève. */
+  without: string;
+  /** Alternatives crédibles, quand il y en a. */
+  alternatives?: string;
+}
+
+/**
+ * Méthode de diagnostic d'un incident.
+ *
+ * L'ordre des champs est la méthode elle-même : on part du symptôme observé,
+ * pas d'une correction supposée.
+ */
+export interface IncidentBlock {
+  kind: 'incident';
+  symptom: string;
+  /** Où regarder en premier. */
+  where: string[];
+  /** Informations à récupérer avant toute hypothèse. */
+  collect: string[];
+  /** Hypothèses plausibles, et comment trancher chacune. */
+  hypotheses: { cause: string; confirm: string }[];
+  fix: string;
+  /** Comment vérifier que c'est réellement corrigé. */
+  validate: string;
 }
 export interface ExampleBlock {
   kind: 'example';
@@ -270,6 +340,13 @@ export interface QuizQuestion {
   /** Pairs for the `match` type. */
   pairs?: { left: string; right: string }[];
   explanation: string;
+  /**
+   * Réponse courte tenable à l'oral, pour le mode entretien. `answer` reste la
+   * réponse de référence ; celle-ci est ce qu'on dit en premier.
+   */
+  shortAnswer?: string;
+  /** Questions qui tombent juste après, une fois la réponse donnée. */
+  followUps?: FollowUp[];
   tags: string[];
 }
 
