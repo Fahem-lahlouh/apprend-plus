@@ -31,8 +31,8 @@ describe('learning flow against IndexedDB', () => {
     await seedDatabase();
   });
 
-  it('seeds the four built-in domains with real content', async () => {
-    expect(await db.domains.count()).toBe(4);
+  it('seeds the five built-in domains with real content', async () => {
+    expect(await db.domains.count()).toBe(5);
     expect(await db.lessons.count()).toBeGreaterThan(30);
     expect(await db.questions.count()).toBeGreaterThan(20);
     expect(await db.flashcards.count()).toBeGreaterThan(20);
@@ -114,26 +114,26 @@ describe('learning flow against IndexedDB', () => {
   });
 
   it('reschedules a reviewed flashcard out of the due queue', async () => {
-    const before = await buildReviewQueue({ courseId: 'java-fondamentaux' });
+    const before = await buildReviewQueue({ courseId: 'java-c1-debutant' });
     expect(before.length).toBeGreaterThan(0);
 
     const card = before[0].card;
     await reviewFlashcard(card, 'easy');
-    const after = await buildReviewQueue({ courseId: 'java-fondamentaux' });
+    const after = await buildReviewQueue({ courseId: 'java-c1-debutant' });
     expect(after.some((entry) => entry.card.id === card.id)).toBe(false);
   });
 
   it('brings a failed card back almost immediately', async () => {
-    const [{ card }] = await buildReviewQueue({ courseId: 'java-fondamentaux' });
+    const [{ card }] = await buildReviewQueue({ courseId: 'java-c1-debutant' });
     await reviewFlashcard(card, 'again');
     const schedule = (await db.schedules.get(card.id))!;
     expect(new Date(schedule.dueAt).getTime() - Date.now()).toBeLessThan(10 * 60_000);
   });
 
   it('toggles favorites on and off', async () => {
-    expect(await toggleFavorite('course', 'java-poo', 'Java POO')).toBe(true);
+    expect(await toggleFavorite('course', 'java-c2-objet', 'Java POO')).toBe(true);
     expect(await db.favorites.count()).toBe(1);
-    expect(await toggleFavorite('course', 'java-poo', 'Java POO')).toBe(false);
+    expect(await toggleFavorite('course', 'java-c2-objet', 'Java POO')).toBe(false);
     expect(await db.favorites.count()).toBe(0);
   });
 

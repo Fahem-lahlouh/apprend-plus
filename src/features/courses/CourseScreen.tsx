@@ -7,6 +7,7 @@ import { Glyph } from '@/components/Glyph';
 import { db } from '@/repositories/db';
 import { contentRepository } from '@/repositories/contentRepository';
 import { chapterProgress, courseProgress, nextLesson } from '@/services/progression';
+import { loadMasteryMap } from '@/services/masteryService';
 import { favoriteId, toggleFavorite } from '@/services/learningService';
 import { formatMinutes } from '@/utils/date';
 import './courses.css';
@@ -33,7 +34,9 @@ export function CourseScreen() {
       db.favorites.get(favoriteId('course', courseId)),
     ]);
     const completed = new Set(progress.filter((p) => p.status === 'completed').map((p) => p.lessonId));
+    const mastery = await loadMasteryMap(lessons);
     return {
+      mastery,
       course,
       domain,
       chapters,
@@ -171,6 +174,7 @@ export function CourseScreen() {
                   {chapterLessons.map((lesson) => {
                     const isDone = completed.has(lesson.id);
                     const isNext = data.next?.id === lesson.id;
+                    const mastery = data.mastery.get(lesson.id);
                     return (
                       <Link key={lesson.id} to={`/courses/lesson/${lesson.id}`} className="lesson-row">
                         <span
@@ -185,6 +189,11 @@ export function CourseScreen() {
                           <span className="ap-caption">
                             {lesson.estimatedMinutes} min · {lesson.summary}
                           </span>
+                          {mastery && mastery.state !== 'not_started' && (
+                            <span style={{ display: 'block', marginTop: 6 }}>
+                              <span className={`mastery-chip mastery-chip--${mastery.state}`}>{mastery.label}</span>
+                            </span>
+                          )}
                         </span>
                       </Link>
                     );

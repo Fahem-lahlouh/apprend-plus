@@ -72,7 +72,36 @@ export interface Lesson {
   estimatedMinutes: number;
   order: number;
   blocks: ContentBlock[];
+  /** Effort demandé, affiché avant d'ouvrir la leçon. */
+  difficulty?: LessonDifficulty;
+  /**
+   * Leçons à comprendre avant celle-ci. C'est la seule source du graphe de
+   * dépendances : l'ordre d'affichage ne suffit pas à dire ce qui est requis.
+   */
+  prerequisites?: Id[];
+  /**
+   * Définitions issues de cette leçon. Elles sont créées au seed et jouables
+   * immédiatement par le moteur de mémorisation, sans configuration.
+   */
+  definitionIds?: Id[];
+  /** Étiquettes fines de compétence, utilisées par l'analyse des erreurs. */
+  concepts?: string[];
 }
+
+export type LessonDifficulty = 'decouverte' | 'facile' | 'moyen' | 'difficile' | 'expert';
+
+/**
+ * État de maîtrise d'une leçon. Calculé, jamais stocké : ouvrir une page ne
+ * peut donc pas faire croire à une notion maîtrisée.
+ */
+export type MasteryState =
+  | 'not_started'
+  | 'discovered'
+  | 'in_progress'
+  | 'understood'
+  | 'to_reinforce'
+  | 'memorized'
+  | 'mastered';
 
 /* ---------------------------- Content blocks ---------------------------- */
 
@@ -86,7 +115,17 @@ export type ContentBlock =
   | KeyPointsBlock
   | QuizBlock
   | ExerciseBlock
-  | PronunciationBlock;
+  | PronunciationBlock
+  | WhyBlock
+  | CodeExplainBlock
+  | QuestionBlock
+  | CompareBlock
+  | BadGoodBlock
+  | StepsBlock
+  | MemorizeBlock
+  | InterviewBlock
+  | FlowBlock
+  | IncidentBlock;
 
 export interface TextBlock {
   kind: 'text';
@@ -97,6 +136,128 @@ export interface DefinitionBlock {
   kind: 'definition';
   term: string;
   text: string;
+  /** true = formulation technique, affichée sous la définition simple. */
+  technical?: boolean;
+}
+
+/** « Pourquoi on fait ça ? » - l'utilité réelle, pas la définition. */
+export interface WhyBlock {
+  kind: 'why';
+  question: string;
+  text: string;
+}
+
+/** Explication d'un extrait, ligne par ligne. */
+export interface CodeExplainBlock {
+  kind: 'codeExplain';
+  title?: string;
+  lines: { code: string; explain: string }[];
+}
+
+/** Question de compréhension : l'utilisateur réfléchit avant de révéler. */
+export interface QuestionBlock {
+  kind: 'question';
+  question: string;
+  answer: string;
+}
+
+/** Tableau de comparaison à deux colonnes (interface vs classe abstraite...). */
+export interface CompareBlock {
+  kind: 'compare';
+  title?: string;
+  headers: [string, string];
+  rows: { label: string; left: string; right: string }[];
+}
+
+/** Mauvaise version puis bonne version du même code, avec la raison. */
+export interface BadGoodBlock {
+  kind: 'badGood';
+  language: CodeLanguage;
+  title?: string;
+  bad: string;
+  good: string;
+  why: string;
+}
+
+/** Méthodologie ordonnée : diagnostiquer une API lente, par exemple. */
+export interface StepsBlock {
+  kind: 'steps';
+  title?: string;
+  steps: string[];
+}
+
+/** Passerelle vers le moteur de mémorisation pour une définition de la leçon. */
+export interface MemorizeBlock {
+  kind: 'memorize';
+  definitionId: Id;
+  label?: string;
+}
+
+/**
+ * « Comment l'expliquer en entretien ? »
+ *
+ * Deux niveaux plutôt qu'un seul : réciter une définition ne suffit pas en
+ * entretien, il faut d'abord placer une réponse tenable en trente secondes,
+ * puis savoir la dérouler. Les relances sont les questions qui tombent
+ * réellement juste après, une fois la première réponse donnée.
+ */
+export interface InterviewBlock {
+  kind: 'interview';
+  question: string;
+  /** Réponse tenable à l'oral en 20 à 30 secondes. */
+  shortAnswer: string;
+  /** Développement d'une à deux minutes. */
+  detailedAnswer: string;
+  followUps?: FollowUp[];
+}
+
+export interface FollowUp {
+  question: string;
+  answer: string;
+}
+
+/**
+ * Chaîne de composants (« Client → API → Service → Base »).
+ *
+ * Chaque maillon porte les questions qu'on doit pouvoir répondre sur lui, pour
+ * que la chaîne s'apprenne comme un raisonnement et non comme un schéma.
+ */
+export interface FlowBlock {
+  kind: 'flow';
+  title?: string;
+  steps: FlowStep[];
+}
+
+export interface FlowStep {
+  label: string;
+  /** Rôle en une ligne, visible sans déplier. */
+  role: string;
+  /** Ce que le composant fait réellement. */
+  what: string;
+  /** Ce qui casse ou se dégrade si on l'enlève. */
+  without: string;
+  /** Alternatives crédibles, quand il y en a. */
+  alternatives?: string;
+}
+
+/**
+ * Méthode de diagnostic d'un incident.
+ *
+ * L'ordre des champs est la méthode elle-même : on part du symptôme observé,
+ * pas d'une correction supposée.
+ */
+export interface IncidentBlock {
+  kind: 'incident';
+  symptom: string;
+  /** Où regarder en premier. */
+  where: string[];
+  /** Informations à récupérer avant toute hypothèse. */
+  collect: string[];
+  /** Hypothèses plausibles, et comment trancher chacune. */
+  hypotheses: { cause: string; confirm: string }[];
+  fix: string;
+  /** Comment vérifier que c'est réellement corrigé. */
+  validate: string;
 }
 export interface ExampleBlock {
   kind: 'example';
@@ -179,6 +340,13 @@ export interface QuizQuestion {
   /** Pairs for the `match` type. */
   pairs?: { left: string; right: string }[];
   explanation: string;
+  /**
+   * Réponse courte tenable à l'oral, pour le mode entretien. `answer` reste la
+   * réponse de référence ; celle-ci est ce qu'on dit en premier.
+   */
+  shortAnswer?: string;
+  /** Questions qui tombent juste après, une fois la réponse donnée. */
+  followUps?: FollowUp[];
   tags: string[];
 }
 

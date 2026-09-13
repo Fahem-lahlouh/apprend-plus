@@ -126,3 +126,14 @@
 }
 
 .defi-timer--low { color: var(--ap-danger); }
+
+.incident-option {
+  width: 100%;
+  font: inherit;
+  color: var(--ap-text);
+}
+
+.incident-option--picked {
+  background: var(--ap-green-tint);
+  box-shadow: inset 0 0 0 1.5px var(--ap-green-ink);
+}

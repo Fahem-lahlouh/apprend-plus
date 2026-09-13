@@ -185,8 +185,21 @@ function tokenWeight(token: Token, weakness: WeaknessLookup): number {
   return token.importance * (1 + 2 * weakness(token.key));
 }
 
-function chooseSentence(analysis: DefinitionAnalysis, rng: Rng, weakness: WeaknessLookup): Sentence | null {
-  const usable = analysis.sentences.filter((sentence) => sentence.tokens.length >= 3);
+/**
+ * Choisit une phrase parmi celles qui sont assez longues pour le jeu demandé.
+ *
+ * `minTokens` est indispensable : une définition peut compter assez de mots au
+ * total pour qu'un jeu soit proposé, alors que la phrase tirée au sort, elle,
+ * est trop courte. Filtrer ici plutôt que d'abandonner ensuite évite qu'un jeu
+ * annoncé comme disponible ne produise aucun exercice.
+ */
+function chooseSentence(
+  analysis: DefinitionAnalysis,
+  rng: Rng,
+  weakness: WeaknessLookup,
+  minTokens = 3,
+): Sentence | null {
+  const usable = analysis.sentences.filter((sentence) => sentence.tokens.length >= minTokens);
   if (usable.length === 0) return null;
   return pickWeighted(
     usable,
@@ -344,8 +357,8 @@ function generateFillBlank(context: GenerationContext, instruction: string): Exe
 }
 
 function generateReorderWords(context: GenerationContext): ExerciseDraft | null {
-  const sentence = chooseSentence(context.analysis, context.rng, context.weakness);
-  if (!sentence || sentence.tokens.length < 4) return null;
+  const sentence = chooseSentence(context.analysis, context.rng, context.weakness, 4);
+  if (!sentence) return null;
   const words = sentence.tokens.map((token) => token.text);
   return {
     instruction: 'Remets les mots dans le bon ordre.',
@@ -357,8 +370,8 @@ function generateReorderWords(context: GenerationContext): ExerciseDraft | null 
 }
 
 function generateReorderChunks(context: GenerationContext): ExerciseDraft | null {
-  const sentence = chooseSentence(context.analysis, context.rng, context.weakness);
-  if (!sentence || sentence.tokens.length < 6) return null;
+  const sentence = chooseSentence(context.analysis, context.rng, context.weakness, 6);
+  if (!sentence) return null;
   const chunks = splitIntoChunks(sentence, 2 + Math.floor(context.profile.level / 5));
   if (chunks.length < 2) return null;
   return {
@@ -371,8 +384,8 @@ function generateReorderChunks(context: GenerationContext): ExerciseDraft | null
 }
 
 function generateContinueSentence(context: GenerationContext): ExerciseDraft | null {
-  const sentence = chooseSentence(context.analysis, context.rng, context.weakness);
-  if (!sentence || sentence.tokens.length < 5) return null;
+  const sentence = chooseSentence(context.analysis, context.rng, context.weakness, 5);
+  if (!sentence) return null;
   const cutIndex = Math.max(2, Math.floor(sentence.tokens.length * 0.45));
   const cut = sentence.tokens[cutIndex];
   const start = sentence.text.slice(0, cut.start).trim();
@@ -484,8 +497,8 @@ function alterSentence(
 }
 
 function generateFindError(context: GenerationContext): ExerciseDraft | null {
-  const sentence = chooseSentence(context.analysis, context.rng, context.weakness);
-  if (!sentence || sentence.tokens.length < 4) return null;
+  const sentence = chooseSentence(context.analysis, context.rng, context.weakness, 4);
+  if (!sentence) return null;
   const altered = alterSentence(sentence, context);
   if (!altered) return null;
   const tokens = sentence.tokens.map((token) =>

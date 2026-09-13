@@ -36,6 +36,9 @@ import { DefinitionScreen } from '@/features/memorize/DefinitionScreen';
 import { DefinitionEditorScreen } from '@/features/memorize/DefinitionEditorScreen';
 import { MemorizeSessionScreen } from '@/features/memorize/MemorizeSessionScreen';
 import { TimedMissingWordScreen } from '@/features/games/TimedMissingWordScreen';
+import { InterviewScreen } from '@/features/games/InterviewScreen';
+import { CodeReadingScreen } from '@/features/games/CodeReadingScreen';
+import { IncidentScreen } from '@/features/games/IncidentScreen';
 
 function Boot({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -94,6 +97,9 @@ export function App() {
                   <Route path="/games/memory" element={<MemoryGameScreen />} />
                   <Route path="/games/defi" element={<SpeedChallengeScreen />} />
                   <Route path="/games/timed" element={<TimedMissingWordScreen />} />
+                  <Route path="/games/entretien" element={<InterviewScreen />} />
+                  <Route path="/games/code" element={<CodeReadingScreen />} />
+                  <Route path="/games/incident" element={<IncidentScreen />} />
 
                   <Route path="/memorize" element={<DefinitionsScreen />} />
                   <Route path="/memorize/new" element={<DefinitionEditorScreen />} />

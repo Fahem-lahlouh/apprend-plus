@@ -2,6 +2,7 @@ import { db } from '@/repositories/db';
 import { settingsRepository } from '@/repositories/settingsRepository';
 import { buildDomain, type BuiltDomain } from './builders';
 import { javaDomain } from './java';
+import { stackDomain } from './stack';
 import { dataDomain } from './data';
 import { anglaisDomain } from './anglais';
 import { grammaireDomain } from './grammaire';
@@ -9,16 +10,20 @@ import type { DayStat, LearningSession, LessonProgress, Reminder } from '@/model
 import { toDayKey } from '@/utils/date';
 import { newId } from '@/utils/id';
 
-export const SEED_VERSION = 1;
+export const SEED_VERSION = 3;
 
 /** Lessons pre-marked as done so the app opens on a realistic state. */
 const DEMO_COMPLETED_LESSONS = [
-  // Java : 14 / 21 leçons
-  'java-l-introduction', 'java-l-jvm', 'java-l-premier-programme',
-  'java-l-variables', 'java-l-types', 'java-l-conversions',
-  'java-l-conditions', 'java-l-boucles', 'java-l-méthodes',
-  'java-l-classes', 'java-l-encapsulation',
-  'java-l-héritage', 'java-l-polymorphisme', 'java-l-interfaces',
+  // Java : le parcours est suivi dans l'ordre, jusqu'au milieu de la POO.
+  'java-l-introduction', 'java-l-ou-sert-java',
+  'java-l-jvm', 'java-l-jdk-jre',
+  'java-l-premier-programme', 'java-l-packages-imports', 'java-l-compiler-executer',
+  'java-l-variables', 'java-l-types-primitifs', 'java-l-string', 'java-l-wrappers',
+  'java-l-operateurs', 'java-l-comparaison-logique',
+  'java-l-conditions', 'java-l-switch',
+  'java-l-boucles', 'java-l-break-continue',
+  'java-l-methodes', 'java-l-surcharge',
+  'java-l-poo', 'java-l-classes', 'java-l-attributs', 'java-l-constructeurs',
   // Data : 2 / 5
   'data-l-select', 'data-l-joins',
   // Anglais : 3 / 10
@@ -29,7 +34,7 @@ const DEMO_COMPLETED_LESSONS = [
 ];
 
 function buildAll(now: string): BuiltDomain[] {
-  return [javaDomain, dataDomain, anglaisDomain, grammaireDomain].map((spec, index) =>
+  return [javaDomain, stackDomain, dataDomain, anglaisDomain, grammaireDomain].map((spec, index) =>
     buildDomain(spec, index, now),
   );
 }
@@ -45,7 +50,7 @@ function demoReminders(now: string): Reminder[] {
       durationMin: 20,
       enabled: true,
       domainId: 'java',
-      courseId: 'java-fondamentaux',
+      courseId: 'java-c1-debutant',
       createdAt: now,
     },
     {
@@ -111,7 +116,7 @@ function demoHistory(goalMinutes: number): { sessions: LearningSession[]; stats:
     durationSec: todaySeconds,
     day: todayKey,
     domainId: 'java',
-    courseId: 'java-poo',
+    courseId: 'java-c2-objet',
     activity: 'lesson',
   });
   stats.push({
@@ -125,6 +130,49 @@ function demoHistory(goalMinutes: number): { sessions: LearningSession[]; stats:
   return { sessions, stats };
 }
 
+/**
+ * Contenu Java de la v1, remplacé par le parcours en cinq étapes.
+ *
+ * `bulkPut` ajoute et met à jour, mais ne supprime rien : sans ce nettoyage, une
+ * installation existante afficherait les anciens cours à côté des nouveaux. La
+ * liste est explicite plutôt que déduite, pour qu'aucun contenu créé par
+ * l'utilisateur ne puisse être emporté au passage.
+ */
+const RETIRED_V1_CONTENT = {
+  paths: ['java-path-fondamentaux'],
+  courses: ['java-fondamentaux', 'java-poo', 'java-moderne'],
+  chapters: [
+    'java-ch-démarrer', 'java-ch-variables', 'java-ch-classes', 'java-ch-héritage',
+    'java-ch-collections', 'java-ch-exceptions', 'java-ch-streams', 'java-ch-flux',
+    'java-ch-versions',
+  ],
+  lessons: ['java-l-conversions', 'java-l-types', 'java-l-héritage', 'java-l-méthodes'],
+  questions: [
+    'java-q-intro-1', 'java-q-var-1', 'java-q-conv-1', 'java-q-cond-1',
+    'java-q-classes-1', 'java-q-encap-1', 'java-q-héritage-1', 'java-q-poly-1',
+    'java-q-exceptions-1', 'java-q-exceptions-2', 'java-q-streams-1', 'java-q-streams-2',
+  ],
+  flashcards: [
+    'java-fc-jvm', 'java-fc-jdk', 'java-fc-encaps', 'java-fc-poly', 'java-fc-equals',
+    'java-fc-hashmap', 'java-fc-checked', 'java-fc-stream-lazy', 'java-fc-optional',
+    'java-fc-record',
+  ],
+};
+
+async function pruneRetiredContent(): Promise<void> {
+  await db.paths.bulkDelete(RETIRED_V1_CONTENT.paths);
+  await db.courses.bulkDelete(RETIRED_V1_CONTENT.courses);
+  await db.chapters.bulkDelete(RETIRED_V1_CONTENT.chapters);
+  await db.lessons.bulkDelete(RETIRED_V1_CONTENT.lessons);
+  await db.questions.bulkDelete(RETIRED_V1_CONTENT.questions);
+  await db.flashcards.bulkDelete(RETIRED_V1_CONTENT.flashcards);
+
+  // La progression et les révisions qui pointaient vers ces leçons n'ont plus
+  // de cible : les laisser fausserait les pourcentages d'avancement.
+  await db.lessonProgress.bulkDelete(RETIRED_V1_CONTENT.lessons);
+  await db.schedules.bulkDelete(RETIRED_V1_CONTENT.flashcards);
+}
+
 export interface SeedOptions {
   withDemoProgress?: boolean;
 }
@@ -136,6 +184,7 @@ export async function seedDatabase(options: SeedOptions = {}): Promise<void> {
   const prefs = await settingsRepository.getPreferences();
 
   await db.transaction('rw', db.tables, async () => {
+    await pruneRetiredContent();
     await db.domains.bulkPut(built.map((b) => b.domain));
     await db.paths.bulkPut(built.flatMap((b) => b.paths));
     await db.courses.bulkPut(built.flatMap((b) => b.courses));
@@ -144,6 +193,11 @@ export async function seedDatabase(options: SeedOptions = {}): Promise<void> {
     await db.questions.bulkPut(built.flatMap((b) => b.questions));
     await db.flashcards.bulkPut(built.flatMap((b) => b.flashcards));
     await db.reminders.bulkPut(demoReminders(now));
+
+    // Les définitions du parcours entrent dans la même table que celles saisies
+    // à la main : elles sont donc jouables par tous les jeux de mémorisation,
+    // présents comme à venir, sans traitement particulier.
+    await db.definitions.bulkPut(built.flatMap((b) => b.definitions));
 
     if (options.withDemoProgress) {
       const lessons = built.flatMap((b) => b.lessons);
@@ -170,10 +224,10 @@ export async function seedDatabase(options: SeedOptions = {}): Promise<void> {
       await db.bookmarks.put({
         id: 'last',
         domainId: 'java',
-        courseId: 'java-poo',
-        lessonId: 'java-l-exceptions',
-        lessonTitle: 'Gérer les exceptions',
-        courseTitle: 'Java - Programmation objet',
+        courseId: 'java-c2-objet',
+        lessonId: 'java-l-encapsulation',
+        lessonTitle: 'Encapsuler les données',
+        courseTitle: 'Java — Programmation objet',
         at: now,
       });
     }
